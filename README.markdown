@@ -23,6 +23,20 @@ If you are doing django development, it might help to set the `DJANGO_SETTINGS_M
         # Do whatever you like here!
         os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
 
+If you want to make this a bit easier on your self, put the following in your .profile:
+
+    function ropecfg() {
+        echo "import os"|cat - .ropeproject/config.py > /tmp/out && mv /tmp/out $1
+        sed -E -i '' "s|#prefs.add\('python_path', '\~/python/'\)|prefs.add('python_path', '$VIRTUAL_ENV/lib/python2.6/site-packages')|" $1
+        echo "    os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'" >> $1
+    }
+
+Make sure the virtualenv is activated, running:
+
+    ropecfg .ropeproject/config.py
+
+will add the virtualenv to rope's lookup path and the django settings module to the environment.
+
 
 License: 
 

@@ -15,7 +15,8 @@ from tm_helpers import to_plist, from_plist, current_word
 
 __all__ = ('TM_DIALOG', 'TM_DIALOG2', 'tooltip', 'register_completion_images', 
     'current_identifier', 'identifier_before_dot', 'completion_popup', 
-    'call_dialog', 'get_input', 'caret_position', 'find_unindexed_files', 'from_without_import')
+    'call_dialog', 'get_input', 'caret_position', 'find_unindexed_files',
+    'from_without_import', 'detect_virtualenv')
 
 TM_DIALOG = pipes.quote(os.environ['DIALOG_1'])
 TM_DIALOG2 = pipes.quote(os.environ['DIALOG'])
@@ -103,3 +104,12 @@ def find_unindexed_files(directory):
 def from_without_import():
     line = os.environ.get('TM_CURRENT_LINE')
     return line.find('from ') != -1 and line.find(' import ') == -1
+
+def detect_virtualenv():
+    file_path = os.environ['TM_FILEPATH']
+    path,_ = os.path.split(file_path)
+    while path != '/':
+        if os.path.exists(os.path.join(path,".Python")):
+            return path
+        path,_ = os.path.split(path)
+    return None
