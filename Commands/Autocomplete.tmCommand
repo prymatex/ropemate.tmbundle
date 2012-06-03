@@ -5,7 +5,7 @@
 	<key>beforeRunningCommand</key>
 	<string>nop</string>
 	<key>command</key>
-	<string>refactor.py autocomplete
+	<string>"${TM_PYTHON:-python}" "${TM_BUNDLE_SUPPORT}/bin/refactor.py" autocomplete
 </string>
 	<key>input</key>
 	<string>document</string>

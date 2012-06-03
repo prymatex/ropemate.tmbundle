@@ -5,11 +5,11 @@
 	<key>beforeRunningCommand</key>
 	<string>saveModifiedFiles</string>
 	<key>command</key>
-	<string>refactor.py rename</string>
+	<string>"${TM_PYTHON:-python}" "${TM_BUNDLE_SUPPORT}/bin/refactor.py" rename</string>
 	<key>input</key>
 	<string>document</string>
 	<key>keyEquivalent</key>
-	<string>@</string>
+	<string>@ </string>
 	<key>name</key>
 	<string>Rename</string>
 	<key>output</key>

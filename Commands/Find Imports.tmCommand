@@ -6,7 +6,7 @@
 	<string>saveModifiedFiles</string>
 	<key>command</key>
 	<string>in=`cat -`
-out=`echo "$in" | refactor.py find_imports`
+out=`echo "$in" | "${TM_PYTHON:-python}" "${TM_BUNDLE_SUPPORT}/bin/refactor.py" find_imports`
 
 if [ "$in" != "$out" ]
 then

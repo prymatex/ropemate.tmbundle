@@ -5,11 +5,11 @@
 	<key>beforeRunningCommand</key>
 	<string>saveActiveFile</string>
 	<key>command</key>
-	<string>refactor.py local_to_field</string>
+	<string>"${TM_PYTHON:-python}" "${TM_BUNDLE_SUPPORT}/bin/refactor.py" local_to_field</string>
 	<key>input</key>
 	<string>document</string>
 	<key>keyEquivalent</key>
-	<string>@</string>
+	<string>@ </string>
 	<key>name</key>
 	<string>Local To Field</string>
 	<key>output</key>

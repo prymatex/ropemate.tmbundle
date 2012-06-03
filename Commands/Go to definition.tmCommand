@@ -5,7 +5,7 @@
 	<key>beforeRunningCommand</key>
 	<string>nop</string>
 	<key>command</key>
-	<string>url=`refactor.py goto_definition`
+	<string>url=`"${TM_PYTHON:-python}" "${TM_BUNDLE_SUPPORT}/bin/refactor.py" goto_definition`
 
 if [ "$url" != "" ]
 then

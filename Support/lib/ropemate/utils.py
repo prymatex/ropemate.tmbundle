@@ -75,9 +75,9 @@ def call_dialog(command, options=None, shell=True):
     
 def get_input(title="Input",default=""):
     if os.environ.get('TM_RopeMate_HUD', False):
-        nib = os.environ['TM_BUNDLE_SUPPORT']+"/input_hud"
+        nib = os.environ['TM_BUNDLE_SUPPORT']+"/guis/input_hud"
     else:
-        nib = os.environ['TM_BUNDLE_SUPPORT']+"/input"
+        nib = os.environ['TM_BUNDLE_SUPPORT']+"/guis/input"
     out = call_dialog([TM_DIALOG, '-cm', nib], {'title':title, 'result':default}, False)
     if not out:
         return None
