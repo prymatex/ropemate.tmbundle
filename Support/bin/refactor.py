@@ -2,8 +2,9 @@
 import os, sys, glob
 import urllib, re
 
-bundle_lib_path = os.environ['TM_BUNDLE_SUPPORT'] + '/lib'
-sys.path.insert(0, bundle_lib_path)
+bundle_lib_path = os.path.join(os.environ["TM_BUNDLE_SUPPORT"], "lib")
+if bundle_lib_path not in sys.path:
+    sys.path.insert(0, bundle_lib_path)
 
 import rope
 from rope.base import libutils

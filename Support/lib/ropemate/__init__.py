@@ -1,5 +1,11 @@
 import os, sys
 
+support_lib = os.path.join(os.environ["TM_SUPPORT_PATH"], "lib")
+if support_lib not in sys.path:
+    sys.path.insert(0, support_lib)
+
+import tm_helpers
+
 from rope.base import project,libutils
 
 from ropemate.path import update_python_path
@@ -14,7 +20,7 @@ class ropecontext(object):
     
     def __enter__(self):
         project_dir = os.environ.get('TM_PROJECT_DIRECTORY', None)
-        file_path = os.environ['TM_FILEPATH']
+        file_path = os.environ.get('TM_FILEPATH')
         
         if project_dir:
             self.project = project.Project(project_dir)
@@ -24,20 +30,30 @@ class ropecontext(object):
                 importer.generate_cache()
             if os.path.exists("%s/__init__.py" % project_dir):
                 sys.path.append(project_dir)
+            self.input = sys.stdin.read()
             
-        else:
+        elif file_path:
             #create a single-file project (ignoring all other files in the file's folder)
             folder = os.path.dirname(file_path)
             ignored_res = os.listdir(folder)
             ignored_res.remove(os.path.basename(file_path))
             self.project = project.Project(
                 ropefolder=None,projectroot=folder, ignored_resources=ignored_res)
-        
+            self.input = sys.stdin.read()
+        else:
+            tm_helpers.save_current_document()
+            file_path = os.environ.get('TM_FILEPATH')
+            folder = os.path.dirname(file_path)
+            ignored_res = os.listdir(folder)
+            ignored_res.remove(os.path.basename(file_path))
+            self.project = project.Project(
+                ropefolder=None,projectroot=folder, ignored_resources=ignored_res)
+            with open(file_path) as fs:
+                self.input = fs.read()
+            
         self.resource = libutils.path_to_resource(self.project, file_path)
         
         update_python_path( self.project.prefs.get('python_path', []) )
-        
-        self.input = sys.stdin.read()
         
         return self
     
