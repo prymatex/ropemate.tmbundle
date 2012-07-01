@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>name</key>
+	<string>Autocomplete</string>
+	<key>scope</key>
+	<string>source.python</string>
+	<key>settings</key>
+	<dict>
+		<key>disableDefaultCompletion</key>
+		<integer>0</integer>
+		<key>executeCompletionCommand</key>
+		<dict>
+			<key>beforeRunningCommand</key>
+			<string>nop</string>
+			<key>command</key>
+			<string>"${TM_PYTHON:-python}" "${TM_BUNDLE_SUPPORT}/bin/refactor.py" autocomplete</string>
+			<key>input</key>
+			<string>document</string>
+			<key>output</key>
+			<string>none</string>
+		</dict>
+	</dict>
+	<key>uuid</key>
+	<string>1F16A6E2-C0BB-11E1-8E91-001E4C8CBB6E</string>
+</dict>
+</plist>
