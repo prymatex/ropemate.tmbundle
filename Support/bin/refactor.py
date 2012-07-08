@@ -6,6 +6,10 @@ bundle_lib_path = os.path.join(os.environ["TM_BUNDLE_SUPPORT"], "lib")
 if bundle_lib_path not in sys.path:
     sys.path.insert(0, bundle_lib_path)
 
+tm_support_path = os.environ['TM_SUPPORT_PATH'] + '/lib'
+if tm_support_path not in sys.path:
+    sys.path.insert(0, tm_support_path)
+    
 import rope
 from rope.base import libutils
 from rope.contrib import codeassist, autoimport
@@ -16,6 +20,8 @@ from rope.refactor.localtofield import LocalToField
 
 import ropemate
 from ropemate.utils import *
+
+import plistlib
 
 def autocomplete():
     """Can auto complete your code."""
@@ -234,10 +240,10 @@ def find_imports():
                     return context.input
                 else:
                     register_completion_images()
-                    command = TM_DIALOG2+" popup"
+                    command = TM_DIALOG2 + " popup"
                     word = current_identifier()
                     if word:
-                        command += " --alreadyTyped "+word
+                        command += " --alreadyTyped " + word
                     command += " --returnChoice"
                     options = [dict([['display',p.display],
                                     ['image', p.type if p.type else "None"],
@@ -247,15 +253,9 @@ def find_imports():
                     
                     out = call_dialog(command, {'suggestions' : options})
                     
-                    # from_plist parses only xml-plists, but dialog returns old-style ascii plists
-                    try:
-                        import_from_mod_name = re.search(r'module = "(.*)";', out).group(1)
-                    except:
-                        import_from_mod_name = re.search(r'module = (.*);', out).group(1)
-                    try:
-                        import_name = re.search(r'match = "(.*)";', out).group(1)
-                    except:
-                        import_name = re.search(r'match = (.*);', out).group(1)
+                    out  = plistlib.readPlistFromString(out)
+                    import_from_mod_name = out["module"]
+                    import_name = out["match"]
                     
                     typed_len = len(word)
                     code = context.input[:offset-typed_len] + import_name + context.input[offset:]
