@@ -257,14 +257,25 @@ def find_imports():
                     import_from_mod_name = out["module"]
                     import_name = out["match"]
                     
-                    typed_len = len(word)
-                    code = context.input[:offset-typed_len] + import_name + context.input[offset:]
-                    lines = code.split("\n")
-                    idx = find_last_import_line(lines)
-                    new_line = "from "+import_from_mod_name+" import "+import_name
-                    #tooltip("Added \""+new_line+"\"at line "+str(idx+2))
-                    lines = lines[:idx+1]+[new_line]+lines[idx+1:]
-                    result = "\n".join(lines)
+                    codeBefore = context.input[:offset]
+                    codeAfter = context.input[offset:]
+                    wordLastIndex = wordFirstIndex = 0
+                    if codeBefore.endswith(word):
+                        codeBefore = codeBefore[:-len(word)]
+                    elif codeAfter.startswith(word):
+                        codeAfter = codeAfter[len(word):]
+                    else:
+                        for index in range(len(word)):
+                            if codeAfter.startswith(word[index:]):
+                                codeBefore = codeBefore[:-len(word[:index])]
+                                codeAfter = codeAfter[len(word[index:]):]
+                                break
+                            
+                    linesBefore = codeBefore.split("\n")
+                    idx = find_last_import_line(linesBefore)
+                    new_line = "from " + import_from_mod_name + " import " + import_name
+                    linesBefore.insert(idx + 1, new_line)
+                    result = "\n".join(linesBefore) + import_name + codeAfter
             except Exception, e:
                 tooltip(e)
                 return context.input
