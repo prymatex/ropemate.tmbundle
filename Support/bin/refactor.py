@@ -210,12 +210,14 @@ def complete_import(project, resource, code, offset):
 
 def find_imports():
     def find_last_import_line(lines):
-        x = -1
-        for i in range(len(lines)):
+        coment = -1
+        for i in range(len(lines))[::-1]:
             l = lines[i]
             if l.startswith("from") or l.startswith("import"):
-                x = i
-        return x
+                return i
+            if l.startswith("#") and coment == -1:
+                coment = i
+        return coment
 
     def correct_pacakges(proposals, context):
         for p in proposals:

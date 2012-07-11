@@ -9,7 +9,7 @@
 	<key>settings</key>
 	<dict>
 		<key>disableDefaultCompletion</key>
-		<integer>0</integer>
+		<integer>1</integer>
 		<key>executeCompletionCommand</key>
 		<dict>
 			<key>beforeRunningCommand</key>
