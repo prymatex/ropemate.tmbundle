@@ -14,7 +14,7 @@ if tm_support_path not in sys.path:
 from tm_helpers import to_plist, from_plist, current_word
 
 __all__ = ('TM_DIALOG', 'TM_DIALOG2', 'tooltip', 'register_completion_images', 
-    'current_identifier', 'identifier_before_dot', 'completion_popup', 
+    'current_identifier', 'identifier_before_dot', 'completer', 'completion_popup', 
     'call_dialog', 'get_input', 'caret_position', 'find_unindexed_files',
     'from_without_import', 'detect_virtualenv')
 
@@ -24,6 +24,9 @@ TM_DIALOG2 = pipes.quote(os.environ['DIALOG'])
 def tooltip(text):
     options = {'text':str(text)}
     call_dialog(TM_DIALOG2+" tooltip", options)
+
+def completer():
+    call_dialog(TM_DIALOG2+" completer")
 
 def register_completion_images():
     icon_dir = os.environ['TM_BUNDLE_SUPPORT'] + '/icons'

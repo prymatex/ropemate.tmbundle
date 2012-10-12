@@ -37,7 +37,8 @@ def autocomplete():
                 if len(proposals) == 0:
                     proposals, errors = simple_module_completion()
                 if len(proposals) == 0:
-                    tooltip("No completions found!%s" % errors)
+                    completer()
+                    tooltip("No completions found!\n%s" % errors)
                 else:
                     completion_popup(proposals)
             except Exception, e:
