@@ -1,15 +1,19 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import os, sys, glob
 import urllib, re
 
 bundle_lib_path = os.path.join(os.environ["TM_BUNDLE_SUPPORT"], "lib")
 if bundle_lib_path not in sys.path:
     sys.path.insert(0, bundle_lib_path)
+    from ropemate import patchs
+    patchs.apply()
 
 tm_support_path = os.environ['TM_SUPPORT_PATH'] + '/lib'
 if tm_support_path not in sys.path:
     sys.path.insert(0, tm_support_path)
-    
+
 import rope
 from rope.base import libutils
 from rope.contrib import codeassist, autoimport
