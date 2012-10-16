@@ -2,6 +2,26 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>mainMenu</key>
+	<dict>
+		<key>excludedItems</key>
+		<array>
+			<string>D40BBBDD-2EDF-41A7-8B00-16E4442FCE4D</string>
+			<string>21AFB944-D812-48D9-B3C2-23743840CA6F</string>
+			<string>DE9FF600-B7C9-4F80-AA5F-BC73A7BD07F4</string>
+			<string>6ACE6EA8-D614-440F-A2DE-FD53D1DEA81B</string>
+			<string>6890A228-0BE8-4B15-8401-6E948EB91296</string>
+			<string>60BA84AA-EDE8-41A5-9EB4-FB34B1E2A36C</string>
+		</array>
+		<key>items</key>
+		<array>
+			<string>1D82239A-E8AE-48A8-9653-BC7F2AD6D8CC</string>
+			<string>B1CF75F0-08EF-11E2-ACEA-001E4C8CBB6E</string>
+		</array>
+		<key>submenus</key>
+		<dict>
+		</dict>
+	</dict>
 	<key>name</key>
 	<string>RopeMate</string>
 	<key>ordering</key>

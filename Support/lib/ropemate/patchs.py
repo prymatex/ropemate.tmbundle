@@ -21,7 +21,7 @@ http://groups.google.com/group/rope-dev/browse_thread/thread/924c4b5a6268e618
 it breaks the work of Sphinx on the Object Inspector.
 """
 
-import inspect
+import re, inspect
 
 def apply():
     """Monkey patching rope
@@ -191,3 +191,4 @@ def getargs(obj):
         if 'self' in args:
             args.remove('self')
     return args
+    
