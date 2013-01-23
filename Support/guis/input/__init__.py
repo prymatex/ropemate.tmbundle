@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 #-*- encoding: utf-8 -*-
 
-from PyQt4 import QtGui
-from prymatex.core.plugin.dialog import PMXBaseDialog
+from prymatex.qt import QtGui
+
+from prymatex.core import PMXBaseDialog
 
 class InputDialog(QtGui.QInputDialog, PMXBaseDialog):
     def __init__(self, parent = None):

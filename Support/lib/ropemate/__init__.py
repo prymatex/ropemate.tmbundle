@@ -16,42 +16,44 @@ class ropecontext(object):
 
     project = None
     resource = None
+    project_dir = None
+    file_path = None
     input = ""
     
     def __enter__(self):
-        project_dir = os.environ.get('TM_PROJECT_DIRECTORY', None)
-        file_path = os.environ.get('TM_FILEPATH')
+        self.project_dir = os.environ.get('TM_PROJECT_DIRECTORY')
+        self.file_path = os.environ.get('TM_FILEPATH')
         
-        if project_dir:
-            self.project = project.Project(project_dir)
+        if self.project_dir:
+            self.project = project.Project(self.project_dir)
             # no use to have auto import for a single file project
-            if not os.path.exists("%s/.ropeproject/globalnames" % project_dir):
+            if not os.path.exists("%s/.ropeproject/globalnames" % self.project_dir):
                 importer = autoimport.AutoImport(project=self.project, observe=True)
                 importer.generate_cache()
-            if os.path.exists("%s/__init__.py" % project_dir):
-                sys.path.append(project_dir)
+            if os.path.exists("%s/__init__.py" % self.project_dir):
+                sys.path.append(self.project_dir)
             self.input = sys.stdin.read()
             
-        elif file_path:
+        elif self.file_path:
             #create a single-file project (ignoring all other files in the file's folder)
-            folder = os.path.dirname(file_path)
+            folder = os.path.dirname(self.file_path)
             ignored_res = os.listdir(folder)
-            ignored_res.remove(os.path.basename(file_path))
+            ignored_res.remove(os.path.basename(self.file_path))
             self.project = project.Project(
-                ropefolder=None,projectroot=folder, ignored_resources=ignored_res)
+                ropefolder=None, projectroot=folder, ignored_resources=ignored_res)
             self.input = sys.stdin.read()
         else:
             tm_helpers.save_current_document()
-            file_path = os.environ.get('TM_FILEPATH')
-            folder = os.path.dirname(file_path)
+            self.file_path = os.environ.get('TM_FILEPATH')
+            folder = os.path.dirname(self.file_path)
             ignored_res = os.listdir(folder)
-            ignored_res.remove(os.path.basename(file_path))
+            ignored_res.remove(os.path.basename(self.file_path))
             self.project = project.Project(
-                ropefolder=None,projectroot=folder, ignored_resources=ignored_res)
-            with open(file_path) as fs:
+                ropefolder=None, projectroot=folder, ignored_resources=ignored_res)
+            with open(self.file_path) as fs:
                 self.input = fs.read()
             
-        self.resource = libutils.path_to_resource(self.project, file_path)
+        self.resource = libutils.path_to_resource(self.project, self.file_path)
         
         update_python_path( self.project.prefs.get('python_path', []) )
         

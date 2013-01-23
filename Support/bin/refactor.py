@@ -156,10 +156,11 @@ def goto_definition():
             pass
         except Exception, e:
             tooltip(e)
-        
+
         if found_resource is not None:
+            path = os.path.join(context.project_dir, found_resource.path)
             return 'txmt://open?url=file://%s&line=%d' % (
-                    urllib.quote(found_resource.real_path), line)
+                    urllib.quote(path), line)
         elif line is not None:
             return 'txmt://open?line=%d' % line
         return ''
