@@ -20,7 +20,7 @@ class ChangeCollector(object):
             return None
         def compare_changes(change1, change2):
             return cmp(change1[:2], change2[:2])
-        self.changes.sort(compare_changes)
+        self.changes.sort(key=lambda change: change[:2])
         pieces = []
         last_changed = 0
         for change in self.changes:
@@ -174,7 +174,7 @@ class LogicalLineFinder(object):
             block_start = get_block_start(self.lines, line_number, indents)
             try:
                 return self._block_logical_line(block_start, line_number)
-            except IndentationError, e:
+            except IndentationError as e:
                 tries += 1
                 if tries == 5:
                     raise e
@@ -199,7 +199,7 @@ class LogicalLineFinder(object):
                 real_end = end + block_start - 1
                 if real_start >= start_line:
                     yield (real_start, real_end)
-        except tokenize.TokenError, e:
+        except tokenize.TokenError as e:
             pass
 
     def _block_logical_line(self, block_start, line_number):
@@ -220,7 +220,7 @@ class LogicalLineFinder(object):
                 if line_number <= end:
                     return (start, end)
                 last_end = end + 1
-        except tokenize.TokenError, e:
+        except tokenize.TokenError as e:
             current = e.args[1][0]
             return (last_end, max(last_end, current - 1))
         return (last_end, None)

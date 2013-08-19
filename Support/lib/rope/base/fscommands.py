@@ -6,7 +6,7 @@ provided by `FileSystemCommands` class.  See `SubversionCommands` and
 `MercurialCommands` for example.
 
 """
-import os
+import os, re
 import shutil
 import subprocess
 
@@ -188,7 +188,7 @@ def _execute(args, cwd=None):
 
 
 def unicode_to_file_data(contents, encoding=None):
-    if not isinstance(contents, unicode):
+    if not isinstance(contents, str):
         return contents
     if encoding is None:
         encoding = read_str_coding(contents)
@@ -206,7 +206,7 @@ def file_data_to_unicode(data, encoding=None):
     return result
 
 def _decode_data(data, encoding):
-    if isinstance(data, unicode):
+    if isinstance(data, str):
         return data
     if encoding is None:
         encoding = read_str_coding(data)
@@ -219,8 +219,8 @@ def _decode_data(data, encoding):
     try:
         return data.decode(encoding)
     except (UnicodeError, LookupError):
-        # fallback to latin1: it should never fail
-        return data.decode('latin1')
+        # fallback to utf-8: it should never fail
+        return data.decode('utf-8')
 
 
 def read_file_coding(path):
@@ -239,13 +239,13 @@ def read_file_coding(path):
 
 
 def read_str_coding(source):
-    try:
-        first = source.index('\n') + 1
-        second = source.index('\n', first) + 1
-    except ValueError:
-        second = len(source)
-    return _find_coding(source[:second])
-
+    if not isinstance(source, str):
+        source = source.decode("utf-8", "ignore")
+    #TODO: change it to precompiled version
+    mex = re.search("\-\*\-\s+coding:\s+(.*?)\s+\-\*\-", source)
+    if mex:
+        return mex.group(1)
+    return "utf-8"
 
 def _find_coding(text):
     coding = 'coding'

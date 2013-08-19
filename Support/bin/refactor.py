@@ -37,7 +37,7 @@ def autocomplete():
             try:
                 raw_proposals = codeassist.code_assist(context.project, context.input, offset, context.resource)
                 sorted_proposals = codeassist.sorted_proposals(raw_proposals)
-                proposals = filter(lambda p: p.name != "self=", sorted_proposals)
+                proposals =  [ p for p in sorted_proposals if p.name != "self="]
                 if len(proposals) == 0:
                     proposals, errors = simple_module_completion()
                 if len(proposals) == 0:
@@ -45,8 +45,8 @@ def autocomplete():
                     tooltip("No completions found!\n%s" % errors)
                 else:
                     completion_popup(proposals)
-            except Exception, e:
-                tooltip(e)
+            except Exception as e:
+                tooltip("" % e)
         return result
 
 def simple_module_completion():
@@ -60,7 +60,7 @@ def simple_module_completion():
         module = None
         try:
             module = __import__(name)
-        except ImportError, e:
+        except ImportError as e:
             return [], " %s." % e
         
         names = dir(module)
@@ -88,7 +88,7 @@ def simple_module_completion():
           for n in in_dir_names:
               result.append(rope.contrib.codeassist.CompletionProposal(
                       n, None, rope.base.pynames.UnboundName()))
-    except Exception, e:
+    except Exception as e:
         return [], e
     
     return result, None
@@ -109,7 +109,7 @@ def extract_method():
                 return context.input
             changes = extractor.get_changes(func_name)
             result = changes.changes[0].new_contents
-        except Exception, e:
+        except Exception as e:
             tooltip(e)
             return context.input
         
@@ -138,7 +138,7 @@ def rename():
             result = current_file_changes.new_contents
             # apply changes to all other files
             context.project.do(changes)
-        except Exception, e:
+        except Exception as e:
             tooltip(e)
             result = context.input
         
@@ -151,10 +151,10 @@ def goto_definition():
         try:
             found_resource, line = codeassist.get_definition_location(
                 context.project, context.input, offset, context.resource)
-        except rope.base.exceptions.BadIdentifierError, e:
+        except rope.base.exceptions.BadIdentifierError as e:
             # fail silently -> the user selected empty space etc
             pass
-        except Exception, e:
+        except Exception as e:
             tooltip(e)
 
         if found_resource is not None:
@@ -189,7 +189,7 @@ def organize_imports():
             
             with open(context.resource.real_path, "r") as f:
                 result = f.read()
-        except Exception, e:
+        except Exception as e:
             tooltip(e)
         return result
 
@@ -284,7 +284,7 @@ def find_imports():
                     new_line = "from " + import_from_mod_name + " import " + import_name
                     linesBefore.insert(idx + 1, new_line)
                     result = "\n".join(linesBefore) + import_name + codeAfter
-            except Exception, e:
+            except Exception as e:
                 tooltip(e)
                 return context.input
         return result
@@ -297,7 +297,7 @@ def local_to_field():
             
             changes = operation.get_changes()
             result = changes.changes[0].new_contents
-        except Exception, e:
+        except Exception as e:
             tooltip(e)
             return context.input
         

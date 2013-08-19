@@ -28,8 +28,8 @@ def apply():
     
     See [1], [2] and [3] in module docstring."""
     import rope
-    if rope.VERSION not in ('0.9.4', '0.9.3', '0.9.2'):
-        raise ImportError, "rope %s can't be patched" % rope.VERSION
+    if rope.VERSION not in ('0.9.4-1', '0.9.4', '0.9.3', '0.9.2'):
+        raise ImportError("rope %s can't be patched" % rope.VERSION)
 
     # Patching pycore.PyCore...
     from rope.base import pycore

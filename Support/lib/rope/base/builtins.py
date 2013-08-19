@@ -2,7 +2,7 @@
 import inspect
 
 import rope.base.evaluate
-from rope.base import pynames, pyobjects, arguments, utils
+from rope.base import pynames, pyobjects, arguments, utils, ast
 
 
 class BuiltinModule(pyobjects.AbstractModule):
@@ -32,7 +32,7 @@ class BuiltinModule(pyobjects.AbstractModule):
         result.update(self.initial)
         if self.pycore is not None:
             submodules = self.pycore._builtin_submodules(self.name)
-            for name, module in submodules.iteritems():
+            for name, module in submodules.items():
                 result[name] = rope.base.builtins.BuiltinName(module)
         return result
 
@@ -102,6 +102,11 @@ class BuiltinFunction(_BuiltinElement, pyobjects.AbstractFunction):
     def get_param_names(self, special_args=True):
         return self.argnames
 
+    @utils.saveit
+    def get_attributes(self):
+        result = _object_attributes(self.builtin.__class__, self)
+        return result
+
 
 class BuiltinUnknown(_BuiltinElement, pyobjects.PyObject):
 
@@ -109,6 +114,9 @@ class BuiltinUnknown(_BuiltinElement, pyobjects.PyObject):
         super(BuiltinUnknown, self).__init__(pyobjects.get_unknown())
         self.builtin = builtin
         self.type = pyobjects.get_unknown()
+
+    def get_name(self):
+        return getattr(type(self.builtin), '__name__', None)
 
     @utils.saveit
     def get_attributes(self):
@@ -120,12 +128,24 @@ def _object_attributes(obj, parent):
     for name in dir(obj):
         if name == 'None':
             continue
-        child = getattr(obj, name)
+        try:
+            child = getattr(obj, name)
+        except AttributeError:
+            # descriptors are allowed to raise AttributeError
+            # even if they are in dir()
+            continue
         pyobject = None
         if inspect.isclass(child):
             pyobject = BuiltinClass(child, {}, parent=parent)
         elif inspect.isroutine(child):
-            pyobject = BuiltinFunction(builtin=child, parent=parent)
+            if inspect.ismethoddescriptor(child) and "__weakref__" in dir(obj):
+                try:
+                    weak = child.__get__(obj.__weakref__.__objclass__())
+                except:
+                    weak = child
+                pyobject = BuiltinFunction(builtin=weak, parent=parent)
+            else:
+                pyobject = BuiltinFunction(builtin=child, parent=parent)
         else:
             pyobject = BuiltinUnknown(builtin=child)
         attributes[name] = BuiltinName(pyobject)
@@ -255,7 +275,6 @@ class List(BuiltinClass):
         # Getting methods
         collector('__getitem__', function=self._list_get)
         collector('pop', function=self._list_get)
-        collector('__getslice__', function=self._self_get)
 
         super(List, self).__init__(list, collector.attributes)
 
@@ -279,6 +298,10 @@ class List(BuiltinClass):
 
     def _list_get(self, context):
         if self.holding is not None:
+            args = context.get_arguments(['self', 'key'])
+            if len(args) > 1 and args[1] is not None \
+                and args[1].get_type() == builtins['slice'].get_object():
+                return get_list(self.holding)
             return self.holding
         return context.get_per_name()
 
@@ -475,8 +498,8 @@ class Str(BuiltinClass):
         collector = _AttributeCollector(str)
         collector('__iter__', get_iterator(self_object), check_existence=False)
 
-        self_methods = ['__getitem__', '__getslice__', 'capitalize', 'center',
-                        'decode', 'encode', 'expandtabs', 'join', 'ljust',
+        self_methods = ['__getitem__', 'capitalize', 'center',
+                        'encode', 'expandtabs', 'join', 'ljust',
                         'lower', 'lstrip', 'replace', 'rjust', 'rstrip', 'strip',
                         'swapcase', 'title', 'translate', 'upper', 'zfill']
         for method in self_methods:
@@ -553,7 +576,7 @@ class File(BuiltinClass):
         str_list = get_list(get_str())
         attributes = {}
         def add(name, returned=None, function=None):
-            builtin = getattr(file, name, None)
+            builtin = getattr(open, name, None)
             attributes[name] = BuiltinName(
                 BuiltinFunction(returned=returned, function=function,
                                 builtin=builtin))
@@ -563,7 +586,7 @@ class File(BuiltinClass):
         for method in ['close', 'flush', 'lineno', 'isatty', 'seek', 'tell',
                        'truncate', 'write', 'writelines']:
             add(method)
-        super(File, self).__init__(file, attributes)
+        super(File, self).__init__(open, attributes)
 
 
 get_file = _create_builtin_getter(File)
@@ -597,6 +620,7 @@ class Lambda(pyobjects.AbstractFunction):
     def __init__(self, node, scope):
         super(Lambda, self).__init__()
         self.node = node
+        self.arguments = node.args
         self.scope = scope
 
     def get_returned_object(self, args):
@@ -606,8 +630,36 @@ class Lambda(pyobjects.AbstractFunction):
         else:
             return pyobjects.get_unknown()
 
-    def get_pattributes(self):
+    def get_module(self):
+        return self.parent.get_module()
+
+    def get_scope(self):
+        return self.scope
+
+    def get_kind(self):
+        return 'lambda'
+
+    def get_ast(self):
+        return self.node
+
+    def get_attributes(self):
         return {}
+
+    def get_name(self):
+        return  'lambda'
+
+    def get_param_names(self, special_args=True):
+        result = [node.arg for node in self.arguments.args
+                  if isinstance(node, ast.arg)]
+        if self.arguments.vararg:
+            result.append('*' + self.arguments.vararg)
+        if self.arguments.kwarg:
+            result.append('**' + self.arguments.kwarg)
+        return result
+
+    @property
+    def parent(self):
+        return self.scope.pyobject
 
 
 class BuiltinObject(BuiltinClass):
@@ -628,8 +680,10 @@ def _infer_sequence_for_pyname(pyname):
     seq = pyname.get_object()
     args = arguments.ObjectArguments([pyname])
     if '__iter__' in seq:
-        iter = seq['__iter__'].get_object().\
-               get_returned_object(args)
+        obj = seq['__iter__'].get_object()
+        if not isinstance(obj, pyobjects.AbstractFunction):
+            return None
+        iter = obj.get_returned_object(args)
         if iter is not None and 'next' in iter:
             holding = iter['next'].get_object().\
                       get_returned_object(args)
@@ -722,7 +776,7 @@ _initial_builtins = {
     'object': BuiltinName(BuiltinObject()),
     'type': BuiltinName(BuiltinType()),
     'iter': BuiltinName(BuiltinFunction(function=_iter_function, builtin=iter)),
-    'raw_input': BuiltinName(BuiltinFunction(function=_input_function, builtin=raw_input)),
+    'input': BuiltinName(BuiltinFunction(function=_input_function, builtin=input)),
     }
 
-builtins = BuiltinModule('__builtin__', initial=_initial_builtins)
+builtins = BuiltinModule('builtins', initial=_initial_builtins)

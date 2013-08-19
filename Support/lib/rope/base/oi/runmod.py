@@ -3,7 +3,7 @@ def __rope_start_everything():
     import os
     import sys
     import socket
-    import cPickle as pickle
+    import pickle
     import marshal
     import inspect
     import types
@@ -19,7 +19,7 @@ def __rope_start_everything():
         def __init__(self, port):
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             s.connect(('127.0.0.1', port))
-            self.my_file = s.makefile('w')
+            self.my_file = s.makefile('wb')
 
         def send_data(self, data):
             if not self.my_file.closed:
@@ -122,7 +122,7 @@ def __rope_start_everything():
                 return ('unknown',)
 
         def _get_persisted_builtin(self, object_):
-            if isinstance(object_, (str, unicode)):
+            if isinstance(object_, str):
                 return ('builtin', 'str')
             if isinstance(object_, list):
                 holding = None
@@ -133,8 +133,11 @@ def __rope_start_everything():
                 keys = None
                 values = None
                 if len(object_) > 0:
-                    keys = object_.keys()[0]
+                    keys = list(object_.keys())[0]
                     values = object_[keys]
+                    if values == object_ and len(object_) > 1:
+                        keys = list(object_.keys())[1]
+                        values = object_[keys]
                 return ('builtin', 'dict',
                         self._object_to_persisted_form(keys),
                         self._object_to_persisted_form(values))
@@ -161,14 +164,14 @@ def __rope_start_everything():
             if isinstance(object_, types.CodeType):
                 return self._get_persisted_code(object_)
             if isinstance(object_, types.FunctionType):
-                return self._get_persisted_code(object_.func_code)
+                return self._get_persisted_code(object_.__code__)
             if isinstance(object_, types.MethodType):
-                return self._get_persisted_code(object_.im_func.func_code)
+                return self._get_persisted_code(object_.__func__.__code__)
             if isinstance(object_, types.ModuleType):
                 return self._get_persisted_module(object_)
-            if isinstance(object_, (str, unicode, list, dict, tuple, set)):
+            if isinstance(object_, (str, list, dict, tuple, set)):
                 return self._get_persisted_builtin(object_)
-            if isinstance(object_, (types.TypeType, types.ClassType)):
+            if isinstance(object_, type):
                 return self._get_persisted_class(object_)
             return ('instance', self._get_persisted_class(type(object_)))
 
@@ -187,6 +190,7 @@ def __rope_start_everything():
 
         def close(self):
             self.sender.close()
+            sys.settrace(None)
 
     def _realpath(path):
         return os.path.realpath(os.path.abspath(os.path.expanduser(path)))
@@ -196,12 +200,13 @@ def __rope_start_everything():
     file_to_run = sys.argv[3]
     run_globals = globals()
     run_globals.update({'__name__': '__main__',
-                        '__builtins__': __builtins__,
+                        'builtins': __builtins__,
                         '__file__': file_to_run})
     if send_info != '-':
         data_sender = _FunctionCallDataSender(send_info, project_root)
     del sys.argv[1:4]
-    execfile(file_to_run, run_globals)
+    with open(file_to_run) as file:
+        exec(compile(file.read(), file_to_run, 'exec'), run_globals)
     if send_info != '-':
         data_sender.close()
 

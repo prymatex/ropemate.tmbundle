@@ -212,5 +212,5 @@ def _is_local(pyname):
        scope.get_kind() in ('Function', 'Class'):
         scope = scope.parent
     return scope.get_kind() == 'Function' and \
-           pyname in scope.get_names().values() and \
+           pyname in list(scope.get_names().values()) and \
            isinstance(pyname, pynames.AssignedName)

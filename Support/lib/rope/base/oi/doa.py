@@ -1,4 +1,4 @@
-import cPickle as pickle
+import pickle
 import marshal
 import os
 import socket
@@ -114,7 +114,7 @@ class _SocketReceiver(_MessageReceiver):
             try:
                 self.server_socket.bind(('', self.data_port))
                 break
-            except socket.error, e:
+            except socket.error as e:
                 self.data_port += 1
         self.server_socket.listen(1)
 
@@ -124,7 +124,7 @@ class _SocketReceiver(_MessageReceiver):
     def receive_data(self):
         conn, addr = self.server_socket.accept()
         self.server_socket.close()
-        my_file = conn.makefile('r')
+        my_file = conn.makefile('rb')
         while True:
             try:
                 yield pickle.load(my_file)

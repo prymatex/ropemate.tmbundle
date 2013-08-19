@@ -63,10 +63,10 @@ class EncapsulateField(object):
             scope = pymodule.get_scope().\
                              get_inner_scope_for_line(lineno)
             if scope.get_kind() == 'Class':
-                return pyname in scope.get_names().values()
+                return pyname in list(scope.get_names().values())
             parent = scope.parent
             if parent is not None and parent.get_kind() == 'Class':
-                return pyname in parent.get_names().values()
+                return pyname in list(parent.get_names().values())
         return False
 
     def _get_defining_class_scope(self):

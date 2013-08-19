@@ -99,7 +99,11 @@ class _PatchingASTWalker(object):
             if child is None:
                 continue
             offset = self.source.offset
-            if isinstance(child, ast.AST):
+            if isinstance(child, ast.arg):
+                region = self.source.consume(child.arg)
+                child = self.source[region[0]:region[1]]
+                token_start = offset
+            elif isinstance(child, ast.AST):
                 ast.call_for_nodes(child, self)
                 token_start = child.region[0]
             else:
@@ -179,7 +183,7 @@ class _PatchingASTWalker(object):
         start = 0
         opens = 0
         for child in children:
-            if not isinstance(child, basestring):
+            if not isinstance(child, str):
                 continue
             if child == '' or child[0] in '\'"':
                 continue
@@ -204,7 +208,8 @@ class _PatchingASTWalker(object):
         for children in reversed(self.children_stack):
             for child in children:
                 if isinstance(child, ast.stmt):
-                    return self.lines.get_line_start(child.lineno)
+                    return child.col_offset \
+                           + self.lines.get_line_start(child.lineno)
         return len(self.source.source)
 
     _operators = {'And': 'and', 'Or': 'or', 'Add': '+', 'Sub': '-', 'Mult': '*',
@@ -308,7 +313,7 @@ class _PatchingASTWalker(object):
         children = []
         children.append('{')
         if node.keys:
-            for index, (key, value) in enumerate(zip(node.keys, node.values)):
+            for index, (key, value) in enumerate(list(zip(node.keys, node.values))):
                 children.extend([key, ':', value])
                 if index < len(node.keys) - 1:
                     children.append(',')
@@ -350,7 +355,8 @@ class _PatchingASTWalker(object):
         children = ['from']
         if node.level:
             children.append('.' * node.level)
-        children.extend([node.module, 'import'])
+        children.extend([node.module or '', # see comment at rope.base.ast.walk
+                         'import'])
         children.extend(self._child_nodes(node.names, ','))
         self._handle(node, children)
 
@@ -379,7 +385,7 @@ class _PatchingASTWalker(object):
         children = []
         args = list(node.args)
         defaults = [None] * (len(args) - len(node.defaults)) + list(node.defaults)
-        for index, (arg, default) in enumerate(zip(args, defaults)):
+        for index, (arg, default) in enumerate(list(zip(args, defaults))):
             if index > 0:
                 children.append(',')
             self._add_args_to_children(children, arg, default)
@@ -501,14 +507,10 @@ class _PatchingASTWalker(object):
 
     def _Raise(self, node):
         children = ['raise']
-        if node.type:
-            children.append(node.type)
-        if node.inst:
-            children.append(',')
-            children.append(node.inst)
-        if node.tback:
-            children.append(',')
-            children.append(node.tback)
+        if node.cause:
+            children.append(node.cause)
+        if node.exc:
+            children.append(node.exc)
         self._handle(node, children)
 
     def _Return(self, node):
@@ -570,7 +572,7 @@ class _PatchingASTWalker(object):
         if node.type:
             children.append(node.type)
         if node.name:
-            children.extend([',', node.name])
+            children.extend(['as', node.name])
         children.append(':')
         children.extend(node.body)
         self._handle(node, children)

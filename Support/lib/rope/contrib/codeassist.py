@@ -153,12 +153,8 @@ class CompletionProposal(object):
 
     def __init__(self, name, scope, pyname=None):
         self.name = name
-        self.scope = scope
         self.pyname = pyname
-        if pyname is not None:
-            self.type = self._get_type()
-        else:
-            self.type = None
+        self.scope = self._get_scope(scope)
 
     def __str__(self):
         return '%s (%s, %s)' % (self.name, self.scope, self.type)
@@ -180,10 +176,10 @@ class CompletionProposal(object):
             if isinstance(pyobject, pyobjects.AbstractFunction):
                 return pyobject.get_param_names()
 
-    def _get_type(self):
+    @property
+    def type(self):
         pyname = self.pyname
         if isinstance(pyname, builtins.BuiltinName):
-            self.scope = 'builtin'
             pyobject = pyname.get_object()
             if isinstance(pyobject, builtins.BuiltinFunction):
                 return 'function'
@@ -194,18 +190,23 @@ class CompletionProposal(object):
                  isinstance(pyobject, builtins.BuiltinName):
                 return 'instance'
         elif isinstance(pyname, pynames.ImportedModule):
-            self.scope = 'imported'
             return 'module'
         elif isinstance(pyname, pynames.ImportedName) or \
            isinstance(pyname, pynames.DefinedName):
-            if isinstance(pyname, pynames.ImportedName):
-                self.scope = 'imported'
             pyobject = pyname.get_object()
             if isinstance(pyobject, pyobjects.AbstractFunction):
                 return 'function'
             if isinstance(pyobject, pyobjects.AbstractClass):
                 return 'class'
         return 'instance'
+
+    def _get_scope(self, scope):
+        if isinstance(self.pyname, builtins.BuiltinName):
+            return 'builtin'
+        if isinstance(self.pyname, pynames.ImportedModule) or \
+           isinstance(self.pyname, pynames.ImportedName):
+            return 'imported'
+        return scope
 
     def get_doc(self):
         """Get the proposed object's docstring.
@@ -339,7 +340,6 @@ class _PythonCodeAssist(object):
             for name, pyname in element.get_attributes().items():
                 if name.startswith(self.starting):
                     result[name] = CompletionProposal(name, compl_scope, pyname)
-                    
         return result
 
     def _undotted_completions(self, scope, result, lineno=None):
@@ -423,7 +423,7 @@ class _PythonCodeAssist(object):
             try:
                 function_pyname = rope.base.evaluate.\
                     eval_str(scope, primary)
-            except exceptions.BadIdentifierError, e:
+            except exceptions.BadIdentifierError as e:
                 return {}
             if function_pyname is not None:
                 pyobject = function_pyname.get_object()
@@ -472,16 +472,17 @@ class _ProposalSorter(object):
             scope_proposals = proposals.get(scope, [])
             scope_proposals = [proposal for proposal in scope_proposals
                               if proposal.type in self.typerank]
-            scope_proposals.sort(self._proposal_cmp)
+            scope_proposals.sort(key = self._proposal_cmp)
             result.extend(scope_proposals)
         return result
 
-    def _proposal_cmp(self, proposal1, proposal2):
-        if proposal1.type != proposal2.type:
-            return cmp(self.typerank.get(proposal1.type, 100),
-                       self.typerank.get(proposal2.type, 100))
-        return self._compare_underlined_names(proposal1.name,
-                                              proposal2.name)
+    def _proposal_cmp(self, proposal):
+        def underline_count(name):
+            result = 0
+            while result < len(name) and name[result] == '_':
+                result += 1
+            return result
+        return (self.typerank.get(proposal.type, 100), underline_count(proposal.name), proposal.name)
 
     def _compare_underlined_names(self, name1, name2):
         def underline_count(name):
@@ -601,14 +602,14 @@ class PyDocExtractor(object):
         # and split into a list of lines:
         lines = docstring.expandtabs().splitlines()
         # Determine minimum indentation (first line doesn't count):
-        indent = sys.maxint
+        indent = sys.maxsize
         for line in lines[1:]:
             stripped = line.lstrip()
             if stripped:
                 indent = min(indent, len(line) - len(stripped))
         # Remove indentation (first line is special):
         trimmed = [lines[0].strip()]
-        if indent < sys.maxint:
+        if indent < sys.maxsize:
             for line in lines[1:]:
                 trimmed.append(line[indent:].rstrip())
         # Strip off trailing and leading blank lines:

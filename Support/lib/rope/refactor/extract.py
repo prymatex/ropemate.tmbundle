@@ -673,8 +673,8 @@ class _FunctionInformationCollector(object):
 
 
 def _get_argnames(arguments):
-    result = [node.id for node in arguments.args
-              if isinstance(node, ast.Name)]
+    result = [node.arg for node in arguments.args
+              if isinstance(node, ast.arg)]
     if arguments.vararg:
         result.append(arguments.vararg)
     if arguments.kwarg:
@@ -708,7 +708,7 @@ class _VariableReadsAndWritesFinder(object):
     def find_reads_and_writes(code):
         if code.strip() == '':
             return set(), set()
-        if isinstance(code, unicode):
+        if isinstance(code, str):
             code = code.encode('utf-8')
         node = _parse_text(code)
         visitor = _VariableReadsAndWritesFinder()

@@ -45,6 +45,6 @@ class LocalToField(object):
         holding_scope = pymodule.get_scope().get_inner_scope_for_line(lineno)
         parent = holding_scope.parent
         return isinstance(pyname, pynames.AssignedName) and \
-               pyname in holding_scope.get_names().values() and \
+               pyname in list(holding_scope.get_names().values()) and \
                holding_scope.get_kind() == 'Function' and \
                parent is not None and parent.get_kind() == 'Class'

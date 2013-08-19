@@ -1,3 +1,4 @@
+import sys
 import rope.base.codeanalyze
 import rope.base.evaluate
 import rope.base.builtins
@@ -6,7 +7,6 @@ import rope.base.pyscopes
 from rope.base import (pynamesdef as pynames, exceptions, ast,
                        astutils, pyobjects, fscommands, arguments, utils)
 from rope.base.pyobjects import *
-
 
 class PyFunction(pyobjects.PyFunction):
 
@@ -70,8 +70,8 @@ class PyFunction(pyobjects.PyFunction):
 
     def get_param_names(self, special_args=True):
         # TODO: handle tuple parameters
-        result = [node.id for node in self.arguments.args
-                  if isinstance(node, ast.Name)]
+        result = [node.arg for node in self.arguments.args
+                  if isinstance(node, ast.arg)]
         if special_args:
             if self.arguments.vararg:
                 result.append(self.arguments.vararg)
@@ -148,9 +148,11 @@ class PyModule(pyobjects.PyModule):
                  resource=None, force_errors=False):
         ignore = pycore.project.prefs.get('ignore_syntax_errors', False)
         syntax_errors = force_errors or not ignore
+        self.has_errors = False
         try:
             source, node = self._init_source(pycore, source, resource)
         except exceptions.ModuleSyntaxError:
+            self.has_errors = True
             if syntax_errors:
                 raise
             else:
@@ -171,14 +173,14 @@ class PyModule(pyobjects.PyModule):
                 source_bytes = resource.read_bytes()
                 source_code = fscommands.file_data_to_unicode(source_bytes)
             else:
-                if isinstance(source_code, unicode):
+                if isinstance(source_code, str):
                     source_bytes = fscommands.unicode_to_file_data(source_code)
                 else:
                     source_bytes = source_code
             ast_node = ast.parse(source_bytes, filename=filename)
-        except SyntaxError, e:
+        except SyntaxError as e:
             raise exceptions.ModuleSyntaxError(filename, e.lineno, e.msg)
-        except UnicodeDecodeError, e:
+        except UnicodeDecodeError as e:
             raise exceptions.ModuleSyntaxError(filename, 1, '%s' % (e.reason))
         return source_code, ast_node
 
@@ -221,7 +223,7 @@ class PyPackage(pyobjects.PyPackage):
         result = {}
         modname = self.pycore.modname(self.resource)
         extension_submodules = self.pycore._builtin_submodules(modname)
-        for name, module in extension_submodules.iteritems():
+        for name, module in extension_submodules.items():
             result[name] = rope.base.builtins.BuiltinName(module)
         if self.resource is None:
             return result
@@ -362,22 +364,37 @@ class _ScopeVisitor(object):
     def _update_evaluated(self, targets, assigned,
                           evaluation= '', eval_type=False):
         result = {}
-        names = astutils.get_name_levels(targets)
-        for name, levels in names:
-            assignment = pynames.AssignmentValue(assigned, levels,
+        if not isinstance(targets, str):
+            names = astutils.get_name_levels(targets)
+            for name, levels in names:
+                assignment = pynames.AssignmentValue(assigned, levels,
+                                                     evaluation, eval_type)
+                self._assigned(name, assignment)
+        else:
+            assignment = pynames.AssignmentValue(assigned, [],
                                                  evaluation, eval_type)
-            self._assigned(name, assignment)
+            self._assigned(targets, assignment)
         return result
 
     def _With(self, node):
-        if node.optional_vars:
-            self._update_evaluated(node.optional_vars,
-                                   node.context_expr, '.__enter__()')
+        if (sys.version_info[1] < 3):
+            if node.optional_vars:
+                self._update_evaluated(node.optional_vars,
+                                       node.context_expr, '.__enter__()')
+        elif len(node.items) > 0:
+            #TODO Handle all items?
+            if node.items[0].optional_vars:
+                self._update_evaluated(
+                    node.items[0].optional_vars,
+                    node.items[0].context_expr, 
+                    '.__enter__()'
+                )
+                                
         for child in node.body:
             ast.walk(child, self)
 
     def _excepthandler(self, node):
-        if node.name is not None and isinstance(node.name, ast.Name):
+        if node.name is not None and isinstance(node.name, str):
             type_node = node.type
             if isinstance(node.type, ast.Tuple) and type_node.elts:
                 type_node = type_node.elts[0]
@@ -408,6 +425,9 @@ class _ScopeVisitor(object):
         level = 0
         if node.level:
             level = node.level
+        if node.module is None and len(node.names) > 0: #Relative import "."
+            self._Import(node)
+            return
         imported_module = pynames.ImportedModule(self.get_module(),
                                                  node.module, level)
         if self._is_ignored_import(imported_module):
@@ -456,8 +476,8 @@ class _ClassVisitor(_ScopeVisitor):
         _ScopeVisitor._FunctionDef(self, node)
         if len(node.args.args) > 0:
             first = node.args.args[0]
-            if isinstance(first, ast.Name):
-                new_visitor = _ClassInitVisitor(self, first.id)
+            if isinstance(first, ast.arg):
+                new_visitor = _ClassInitVisitor(self, first.arg)
                 for child in ast.get_child_nodes(node):
                     ast.walk(child, new_visitor)
 

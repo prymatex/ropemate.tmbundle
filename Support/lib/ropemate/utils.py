@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 
 import os
 import pipes
@@ -25,11 +26,11 @@ TM_DIALOG = pipes.quote(os.environ['DIALOG_1'])
 TM_DIALOG2 = pipes.quote(os.environ['DIALOG'])
 
 def tooltip(text):
-    options = {'text':str(text)}
-    call_dialog(TM_DIALOG2+" tooltip", options)
+    options = {'text': text }
+    call_dialog(TM_DIALOG2 + " tooltip", options)
 
 def completer():
-    call_dialog(TM_DIALOG2+" completer")
+    call_dialog(TM_DIALOG2 + " completer")
 
 def register_completion_images():
     icon_dir = os.environ['TM_BUNDLE_SUPPORT'] + '/icons'
@@ -75,7 +76,7 @@ def call_dialog(command, options=None, shell=True):
                  command,
                  stdin=subprocess.PIPE, stdout=subprocess.PIPE)
     if options:
-        out, _ = popen.communicate(to_plist(options))
+        out, _ = popen.communicate(to_plist(options).encode("utf-8"))
     else:
         out, _ = popen.communicate()
     return out

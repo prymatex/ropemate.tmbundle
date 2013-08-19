@@ -278,7 +278,7 @@ class CodeTemplate(object):
                 self.names[name].append((start, end))
 
     def get_names(self):
-        return self.names.keys()
+        return list(self.names.keys())
 
     def substitute(self, mapping):
         collector = codeanalyze.ChangeCollector(self.template)

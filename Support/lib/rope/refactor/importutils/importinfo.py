@@ -77,7 +77,7 @@ class ImportInfo(object):
     def _are_name_and_alias_lists_equal(self, list1, list2):
         if len(list1) != len(list2):
             return False
-        for pair1, pair2 in zip(list1, list2):
+        for pair1, pair2 in list(zip(list1, list2)):
             if pair1 != pair2:
                 return False
         return True

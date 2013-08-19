@@ -26,7 +26,7 @@ class FixSyntax(object):
                                                             force_errors=True)
                 return self.pycore.get_string_module(
                     code, resource=self.resource, force_errors=True)
-            except exceptions.ModuleSyntaxError, e:
+            except exceptions.ModuleSyntaxError as e:
                 if tries < self.maxfixes:
                     tries += 1
                     self.commenter.comment(e.lineno)
@@ -73,7 +73,7 @@ class _Commenter(object):
         self.code = code
         self.lines = self.code.split('\n')
         self.lines.append('\n')
-        self.origs = range(len(self.lines) + 1)
+        self.origs = list(range(len(self.lines) + 1))
         self.diffs = [0] * (len(self.lines) + 1)
 
     def comment(self, lineno):

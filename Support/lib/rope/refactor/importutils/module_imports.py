@@ -1,3 +1,4 @@
+import functools
 import rope.base.pynames
 from rope.base import ast, utils
 from rope.refactor.importutils import importinfo
@@ -59,7 +60,7 @@ class ModuleImports(object):
         # Writing module docs
         result.extend(after_removing[first_non_blank:first_import])
         # Writing imports
-        sorted_imports = sorted(imports, self._compare_import_locations)
+        sorted_imports = sorted(imports, key = functools.cmp_to_key(self._compare_import_locations))
         for stmt in sorted_imports:
             start = self._get_import_location(stmt)
             if stmt != sorted_imports[0]:
@@ -86,7 +87,7 @@ class ModuleImports(object):
                 return stmt.get_new_start()
             else:
                 return stmt.get_old_location()[0]
-        return cmp(get_location(stmt1), get_location(stmt2))
+        return get_location(stmt1) - get_location(stmt2)
 
     def _remove_imports(self, imports):
         lines = self.pymodule.source_code.splitlines(True)
@@ -178,10 +179,10 @@ class ModuleImports(object):
         visitor = actions.SortingVisitor(self.pycore, self._current_folder())
         for import_statement in self.imports:
             import_statement.accept(visitor)
-        in_projects = sorted(visitor.in_project, self._compare_imports)
-        third_party = sorted(visitor.third_party, self._compare_imports)
-        standards = sorted(visitor.standard, self._compare_imports)
-        future = sorted(visitor.future, self._compare_imports)
+        in_projects = sorted(visitor.in_project, key = self._compare_imports)
+        third_party = sorted(visitor.third_party, key = self._compare_imports)
+        standards = sorted(visitor.standard, key = self._compare_imports)
+        future = sorted(visitor.future, key = self._compare_imports)
         blank_lines = 0
         last_index = self._first_import_line()
         last_index = self._move_imports(future, last_index, 0)
@@ -208,14 +209,9 @@ class ModuleImports(object):
                 break
         return lineno
 
-    def _compare_imports(self, stmt1, stmt2):
-        str1 = stmt1.get_import_statement()
-        str2 = stmt2.get_import_statement()
-        if str1.startswith('from ') and not str2.startswith('from '):
-            return 1
-        if not str1.startswith('from ') and str2.startswith('from '):
-            return -1
-        return cmp(str1, str2)
+    def _compare_imports(self, stmt):
+        str = stmt.get_import_statement()
+        return (str.startswith('from '), str)
 
     def _move_imports(self, imports, index, blank_lines):
         if imports:
@@ -428,7 +424,8 @@ class _GlobalImportFinder(object):
         if node.level:
             level = node.level
         import_info = importinfo.FromImport(
-            node.module, level, self._get_names(node.names))
+            node.module or '', # see comment at rope.base.ast.walk
+            level, self._get_names(node.names))
         start_line = node.lineno
         self.imports.append(importinfo.ImportStatement(
                             import_info, node.lineno, end_line,

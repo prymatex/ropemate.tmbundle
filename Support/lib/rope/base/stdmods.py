@@ -36,5 +36,8 @@ def dynload_modules():
             path = os.path.join(dynload_path, name)
             if os.path.isfile(path):
                 if name.endswith('.so') or name.endswith('.dll'):
-                    result.add(os.path.splitext(name)[0])
+                    if "cpython" in name:
+                        result.add(os.path.splitext(os.path.splitext(name)[0])[0])
+                    else:
+                        result.add(os.path.splitext(name)[0])
     return result

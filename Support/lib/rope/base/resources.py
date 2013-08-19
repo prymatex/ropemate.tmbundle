@@ -81,11 +81,12 @@ class File(Resource):
         data = self.read_bytes()
         try:
             return rope.base.fscommands.file_data_to_unicode(data)
-        except UnicodeDecodeError, e:
+        except UnicodeDecodeError as e:
             raise exceptions.ModuleDecodeError(self.path, e.reason)
 
     def read_bytes(self):
-        return open(self.real_path, 'rb').read()
+        with open(self.real_path, 'rb') as fi:
+            return fi.read()
 
     def write(self, contents):
         try:

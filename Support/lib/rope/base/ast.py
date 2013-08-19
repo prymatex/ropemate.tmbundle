@@ -6,15 +6,16 @@ from rope.base import fscommands
 
 def parse(source, filename='<string>'):
     # NOTE: the raw string should be given to `compile` function
-    if isinstance(source, unicode):
+    if isinstance(source, str):
         source = fscommands.unicode_to_file_data(source)
+    source = source.decode()
     if '\r' in source:
         source = source.replace('\r\n', '\n').replace('\r', '\n')
     if not source.endswith('\n'):
         source += '\n'
     try:
-        return compile(source, filename, 'exec', _ast.PyCF_ONLY_AST)
-    except (TypeError, ValueError), e:
+        return compile(source.encode(), filename, 'exec', _ast.PyCF_ONLY_AST)
+    except (TypeError, ValueError) as e:
         error = SyntaxError()
         error.lineno = 1
         error.filename = filename
