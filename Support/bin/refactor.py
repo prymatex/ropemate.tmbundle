@@ -4,13 +4,23 @@
 import os, sys, glob
 import urllib, re
 
+# Conditional insert rope
+if sys.version_info.major < 3:
+    rope_lib_path = os.path.join(os.environ["TM_BUNDLE_SUPPORT"], "vendor", "rope-0.9.4")
+else:
+    rope_lib_path = os.path.join(os.environ["TM_BUNDLE_SUPPORT"], "vendor", "rope_py3k-0.9.4-1")
+if rope_lib_path not in sys.path:
+    sys.path.insert(0, rope_lib_path)
+
+# Apply patchs to rope
 bundle_lib_path = os.path.join(os.environ["TM_BUNDLE_SUPPORT"], "lib")
 if bundle_lib_path not in sys.path:
     sys.path.insert(0, bundle_lib_path)
     from ropemate import patchs
     patchs.apply()
 
-tm_support_path = os.environ['TM_SUPPORT_PATH'] + '/lib'
+# Add prymatex support libs
+tm_support_path = os.path.join(os.environ["TM_SUPPORT_PATH"], "lib")
 if tm_support_path not in sys.path:
     sys.path.insert(0, tm_support_path)
 
