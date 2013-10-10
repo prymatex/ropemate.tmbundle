@@ -50,9 +50,6 @@ def autocomplete():
                 proposals =  [ p for p in sorted_proposals if p.name != "self="]
                 if len(proposals) == 0:
                     proposals, errors = simple_module_completion()
-                if len(proposals) == 0:
-                    completer()
-                    tooltip("No completions found!\n%s" % errors)
                 else:
                     completion_popup(proposals)
             except Exception as e:
