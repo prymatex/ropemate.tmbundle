@@ -1,8 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import re
 import os, sys, glob
-import urllib, re
+
+try:
+    #Python 3
+    from urllib.parse import quote as urlquote
+except:
+    #Python 2
+    from urllib import quote as urlquote
 
 # Conditional insert rope
 if sys.version_info.major < 3:
@@ -53,7 +60,7 @@ def autocomplete():
                 else:
                     completion_popup(proposals)
             except Exception as e:
-                tooltip("" % e)
+                tooltip(e)
         return result
 
 def simple_module_completion():
@@ -167,7 +174,7 @@ def goto_definition():
         if found_resource is not None:
             path = os.path.join(context.project_dir, found_resource.path)
             return 'txmt://open?url=file://%s&line=%d' % (
-                    urllib.quote(path), line)
+                    urlquote(path), line)
         elif line is not None:
             return 'txmt://open?line=%d' % line
         return ''
