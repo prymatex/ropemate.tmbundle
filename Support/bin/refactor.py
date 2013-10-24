@@ -114,7 +114,7 @@ def extract_method():
             if offset_length == 0:
                 tooltip("You have to selected some code to extract it as a method")
                 return context.input
-            offset = caret_position(context.input)-offset_length
+            offset = caret_position(context.input) - offset_length
             extractor = ExtractMethod(context.project, context.resource, offset, offset+offset_length)
             
             func_name = get_input("Extracted method's name")

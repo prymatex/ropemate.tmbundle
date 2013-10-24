@@ -5,6 +5,7 @@ if support_lib not in sys.path:
     sys.path.insert(0, support_lib)
 
 import tm_helpers
+import encoding
 
 from rope.base import project,libutils
 
@@ -32,7 +33,7 @@ class ropecontext(object):
                 importer.generate_cache()
             if os.path.exists("%s/__init__.py" % self.project_dir):
                 sys.path.append(self.project_dir)
-            self.input = sys.stdin.read()
+            self.input = encoding.from_fs(sys.stdin.read())
             
         elif self.file_path:
             #create a single-file project (ignoring all other files in the file's folder)
@@ -41,7 +42,7 @@ class ropecontext(object):
             ignored_res.remove(os.path.basename(self.file_path))
             self.project = project.Project(
                 ropefolder=None, projectroot=folder, ignored_resources=ignored_res)
-            self.input = sys.stdin.read()
+            self.input = encoding.from_fs(sys.stdin.read())
         else:
             tm_helpers.save_current_document()
             self.file_path = os.environ.get('TM_FILEPATH')
@@ -51,7 +52,7 @@ class ropecontext(object):
             self.project = project.Project(
                 ropefolder=None, projectroot=folder, ignored_resources=ignored_res)
             with open(self.file_path) as fs:
-                self.input = fs.read()
+                self.input = encoding.from_fs(fs.read())
             
         self.resource = libutils.path_to_resource(self.project, self.file_path)
         
